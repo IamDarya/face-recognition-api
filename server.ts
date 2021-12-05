@@ -1,3 +1,7 @@
+const register = require("./controllers/register");
+const signIn = require("./controllers/signIn");
+const profile = require("./controllers/getProfile");
+const image = require("./controllers/image");
 const cors = require("cors");
 const hash = require("bcrypt-nodejs");
 const bcrypt = require("bcrypt-nodejs");
@@ -24,78 +28,19 @@ app.get("/", (req: any, res: any) => {
 });
 
 app.post("/signIn", (req: any, res: any) => {
-  DBpostgres.select("email", "hash")
-    .from("login")
-    .where("email", "=", req.body.email)
-    .then((data: any) => {
-      const validLogin = bcrypt.compareSync(req.body.password, data[0].hash);
-      if (validLogin) {
-        return DBpostgres.select("*")
-          .from("users")
-          .where("email", "=", req.body.email)
-          .then((user: any) => {
-            res.json(user[0]);
-          })
-          .catch((err: Error) => res.status(400).json("unable to get user"));
-      } else {
-        res.status(400).json("wrong login data");
-      }
-    })
-    .catch((err: Error) => res.status(400).json("wrong login data"));
+  signIn.handleSignIn(req, res, bcrypt, DBpostgres);
 });
 
 app.post("/register", (req: any, res: any) => {
-  const { email, name, password } = req.body;
-  const hash = bcrypt.hashSync(password);
-  DBpostgres.transaction((trx: any) => {
-    trx
-      .insert({ hash: hash, email: email })
-      .into("login")
-      .returning("email")
-      .then((loginEmail: any) => {
-        return trx("users")
-          .returning("*")
-          .insert({
-            name: name,
-            email: loginEmail[0],
-            joined: new Date(),
-          })
-          .then((user: any) => {
-            res.json(user[0]);
-          });
-      })
-      .then(trx.commit)
-      .catch(trx.rollback);
-  }).catch((err: Error) => res.status(400).json("unable to register"));
+  register.handleRegister(req, res, bcrypt, DBpostgres);
 });
 
 app.get("/profile/:id", (req: any, res: any) => {
-  const { id } = req.params;
-  DBpostgres.select("*")
-    .from("users")
-    .where({ id })
-    .then((user: any) => {
-      if (user.length) {
-        res.json(user[0]);
-      } else {
-        res.status(400).json("user not found");
-      }
-    });
+  profile.getProfileById(req, res, DBpostgres);
 });
 
 app.put("/image", (req: any, res: any) => {
-  const { id } = req.body;
-  DBpostgres("users")
-    .where("id", "=", id)
-    .increment("entries", 1)
-    .returning("entries")
-    .then((entries: any) => {
-      if (entries.length) {
-        res.json(entries);
-      } else {
-        res.status(400).json("entries not found");
-      }
-    });
+  image.handleImage(req, res, DBpostgres);
 });
 
 app.listen(3000, () => {
