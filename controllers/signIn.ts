@@ -1,4 +1,8 @@
 const handleSignIn = (req: any, res: any, bcrypt: any, DBpostgres: any) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json("incorrect form submission");
+  }
   DBpostgres.select("email", "hash")
     .from("login")
     .where("email", "=", req.body.email)
