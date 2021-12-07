@@ -12,7 +12,7 @@ const knex = require("knex");
 const DBpostgres = knex({
   client: "pg",
   connection: {
-    host: "127.0.0.1",
+    host: "postgresql-shallow-68779",
     user: "postgres",
     port: 5432,
     database: "facerec",
